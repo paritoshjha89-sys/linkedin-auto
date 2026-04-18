@@ -152,11 +152,16 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-              <SubscribeButton 
-                priceId={PRICE_IDS[i]} 
-                variant={i === 1 ? 'primary' : 'outline'}
-                label={`Choose ${plan}`}
-              />
+              <button 
+                onClick={() => setIsAuthOpen(true)}
+                className={`w-full py-4 rounded-2xl font-bold transition-all active:scale-95 ${
+                  i === 1 
+                  ? 'bg-gradient-vibrant text-white shadow-xl shadow-primary/20' 
+                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Choose {plan}
+              </button>
             </div>
           ))}
         </div>
