@@ -1,7 +1,9 @@
 "use client";
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Send, Loader2 } from 'lucide-react';
+import { Sparkles, Send, Loader2, Thermometer } from 'lucide-react';
+import { useCompletion } from 'ai/react';
+import { supabase } from '@/lib/supabase';
 
 interface Message {
   sender: string;
@@ -13,26 +15,42 @@ interface ReplyOption {
   text: string;
 }
 
-export default function SmartInbox({ message }: { message: Message }) {
+export default function SmartInbox({ message, leadId }: { message: Message, leadId?: string }) {
   const [replies, setReplies] = useState<ReplyOption[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [temperature, setTemperature] = useState<string | null>(null);
   const [selectedReply, setSelectedReply] = useState("");
 
-  const getAiSuggestions = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/reply-options', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lastMessage: message.text, prospectName: message.sender })
-      });
-      const data = await res.json();
-      setReplies(data.options || []);
-    } catch (error) {
-      console.error("Failed to fetch replies", error);
-    } finally {
-      setLoading(false);
+  const { complete, completion, isLoading } = useCompletion({
+    api: '/api/reply-options',
+    onFinish: async (prompt, completion) => {
+      try {
+        const data = JSON.parse(completion);
+        setReplies(data.options || []);
+        setTemperature(data.temp || null);
+        
+        // Update lead classification in Supabase if leadId exists
+        if (leadId && data.temp) {
+          await supabase
+            .from('leads')
+            .update({ temperature: data.temp.toLowerCase() })
+            .eq('id', leadId);
+        }
+      } catch (e) {
+        console.error("Failed to parse AI completion", e);
+      }
     }
+  });
+
+  const getAiSuggestions = () => {
+    setReplies([]);
+    setTemperature(null);
+    complete(JSON.stringify({ lastMessage: message.text, prospectName: message.sender }));
+  };
+
+  const getTempColor = (temp: string) => {
+    if (temp === 'HOT') return 'bg-rose-500 text-white';
+    if (temp === 'WARM') return 'bg-amber-500 text-white';
+    return 'bg-blue-500 text-white';
   };
 
   return (
@@ -44,16 +62,23 @@ export default function SmartInbox({ message }: { message: Message }) {
             {message.sender[0]}
           </div>
           <div>
-            <h3 className="font-black text-slate-800 tracking-tight">{message.sender}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-black text-slate-800 tracking-tight">{message.sender}</h3>
+              {temperature && (
+                <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tighter ${getTempColor(temperature)}`}>
+                  {temperature}
+                </span>
+              )}
+            </div>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Replied 4m ago • Campaign: "UK Tech Founders"</p>
           </div>
         </div>
         <button 
           onClick={getAiSuggestions} 
-          disabled={loading}
+          disabled={isLoading}
           className="text-primary hover:bg-primary/5 p-3 rounded-2xl transition-all active:scale-90"
         >
-          {loading ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
+          {isLoading ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
         </button>
       </div>
 
@@ -61,8 +86,15 @@ export default function SmartInbox({ message }: { message: Message }) {
       <div className="p-8 h-64 overflow-y-auto bg-slate-50/30">
         <div className="bg-white p-5 rounded-[1.5rem] rounded-tl-none border border-slate-100 shadow-sm max-w-[85%] relative group/msg">
           <div className="absolute -left-2 top-0 w-4 h-4 bg-white border-l border-t border-slate-100 rotate-[-45deg] translate-x-1" />
-          <p className="text-sm text-slate-600 font-medium leading-relaxed italic">"${message.text}"</p>
+          <p className="text-sm text-slate-600 font-medium leading-relaxed italic">"{message.text}"</p>
         </div>
+        
+        {isLoading && (
+          <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-primary animate-pulse uppercase tracking-widest">
+            <Sparkles size={12} />
+            AI is analyzing sentiment and generating replies...
+          </div>
+        )}
       </div>
 
       {/* AI Suggestion Bar */}
@@ -97,10 +129,11 @@ export default function SmartInbox({ message }: { message: Message }) {
           ) : (
             <button 
               onClick={getAiSuggestions} 
+              disabled={isLoading}
               className="w-full py-6 border-2 border-dashed border-slate-100 rounded-[1.5rem] text-slate-400 text-xs font-bold uppercase tracking-widest hover:border-primary/20 hover:text-primary hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
             >
-              {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-              Click to generate smart replies...
+              {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+              {isLoading ? "Generating..." : "Click to generate smart replies..."}
             </button>
           )}
         </div>

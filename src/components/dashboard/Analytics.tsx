@@ -41,6 +41,7 @@ export function Analytics() {
 
         <div className="max-w-4xl mx-auto space-y-12">
            <SmartInbox 
+             leadId="00000000-0000-0000-0000-000000000000"
              message={{ 
                sender: "John Doe", 
                text: "Thanks for reaching out! Your point about multi-channel efficiency really resonated. Would love to chat Tuesday at 2 PM if you're free?" 
