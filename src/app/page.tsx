@@ -1,7 +1,10 @@
-import React from 'react';
+"use client";
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Play, Zap, Target, BarChart3, Users, Check } from 'lucide-react';
 import SubscribeButton from '@/components/billing/SubscribeButton';
+import AuthModal from '@/components/auth/AuthModal';
+import FloatingChat from '@/components/Chatbot/FloatingChat';
 
 const features = [
   {
@@ -33,8 +36,13 @@ const features = [
 const PRICE_IDS = ['pri_basic_123', 'pri_pro_456', 'pri_agency_789'];
 
 export default function Home() {
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+
   return (
     <div className="flex flex-col min-h-screen bg-white">
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+      <FloatingChat />
+
       {/* Navigation */}
       <nav className="glass sticky top-0 z-[100] h-20 flex items-center justify-between px-8 md:px-16">
         <div className="flex items-center gap-3">
@@ -44,8 +52,18 @@ export default function Home() {
         <div className="hidden md:flex items-center gap-10 font-bold text-sm tracking-tight">
           <Link href="#features" className="hover:text-primary transition-colors">Features</Link>
           <Link href="#pricing" className="hover:text-primary transition-colors">Pricing</Link>
-          <Link href="/dashboard" className="px-5 py-2.5 border border-slate-200 rounded-xl hover:border-primary transition-colors">Log In</Link>
-          <Link href="/builder" className="btn-primary !px-5 !py-2.5 text-xs uppercase tracking-widest">Start Free</Link>
+          <button 
+            onClick={() => setIsAuthOpen(true)}
+            className="px-5 py-2.5 border border-slate-200 rounded-xl hover:border-primary transition-colors"
+          >
+            Log In
+          </button>
+          <button 
+            onClick={() => setIsAuthOpen(true)}
+            className="btn-primary !px-5 !py-2.5 text-xs uppercase tracking-widest"
+          >
+            Start Free
+          </button>
         </div>
       </nav>
 
@@ -68,9 +86,12 @@ export default function Home() {
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/builder" className="btn-primary flex items-center gap-2 group !px-8 !py-4 shadow-xl shadow-primary/30">
+            <button 
+              onClick={() => setIsAuthOpen(true)}
+              className="btn-primary flex items-center gap-2 group !px-8 !py-4 shadow-xl shadow-primary/30"
+            >
               Get Started for Free <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
+            </button>
             <button className="flex items-center gap-2 px-8 py-4 rounded-2xl border border-slate-200 font-bold hover:bg-slate-50 transition-colors">
               <Play size={18} fill="currentColor" /> Watch Demo
             </button>
