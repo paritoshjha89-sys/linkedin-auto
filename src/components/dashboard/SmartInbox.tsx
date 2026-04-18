@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Send, Loader2, CheckCircle2 } from 'lucide-react';
-import { useCompletion } from 'ai/react';
+import { useCompletion } from '@ai-sdk/react';
 import { supabase } from '@/lib/supabase';
 import { queueReply } from '@/lib/automation';
 

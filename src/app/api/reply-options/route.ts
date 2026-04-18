@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       }]
     });
 
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error('Reply Generation Error:', error);
     return new Response(JSON.stringify({ error: 'Failed to generate replies' }), { status: 500 });

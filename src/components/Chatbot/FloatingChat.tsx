@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, X, Send, Sparkles, Loader2, MinusCircle, Maximize2 } from 'lucide-react';
-import { useCompletion } from 'ai/react';
+import { useCompletion } from '@ai-sdk/react';
 
 interface ChatMessage {
   role: 'user' | 'ai';
