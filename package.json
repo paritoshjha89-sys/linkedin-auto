@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.64",
     "@paddle/paddle-js": "^1.6.2",
     "@supabase/supabase-js": "^2.38.4",
     "@xyflow/react": "^12.10.2",

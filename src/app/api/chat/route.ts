@@ -1,20 +1,14 @@
-import { OpenAIStream, StreamingTextResponse } from 'ai';
-import { OpenAI } from 'openai';
+import { streamText } from 'ai';
+import { google } from '@ai-sdk/google';
 
 export const runtime = 'edge';
-
-const openai = new OpenAI({
-  apiKey: process.env.GEMINI_API_KEY || 'sk-mock-key',
-  baseURL: "http://localhost:3000/openai/v1",
-});
 
 export async function POST(req: Request) {
   try {
     const { prompt } = await req.json();
 
-    const response = await openai.chat.completions.create({
-      model: "gemini-3-flash",
-      stream: true,
+    const result = await streamText({
+      model: google('gemini-1.5-flash'),
       messages: [
         {
           role: "system",
@@ -29,11 +23,10 @@ export async function POST(req: Request) {
           Style: Professional, encouraging, and data-driven. Use short sentences and bullet points.`
         },
         { role: "user", content: prompt }
-      ]
+      ],
     });
 
-    const stream = OpenAIStream(response);
-    return new StreamingTextResponse(stream);
+    return result.toDataStreamResponse();
   } catch (error) {
     console.error('Chat API Error:', error);
     return new Response(JSON.stringify({ error: 'Failed to chat' }), { status: 500 });

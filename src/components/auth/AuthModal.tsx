@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Github, Chrome } from 'lucide-react';
+import { X, Mail, GithubIcon as Github, Chrome } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function AuthModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {

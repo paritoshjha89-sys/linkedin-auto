@@ -1,21 +1,14 @@
-import { OpenAIStream, StreamingTextResponse } from 'ai';
-import { OpenAI } from 'openai';
+import { streamText } from 'ai';
+import { google } from '@ai-sdk/google';
 
-// We use the edge runtime for streaming
 export const runtime = 'edge';
-
-const openai = new OpenAI({
-  apiKey: process.env.GEMINI_API_KEY || 'sk-mock-key',
-  baseURL: "http://localhost:3000/openai/v1", // Using our Gemini-to-OpenAI gateway
-});
 
 export async function POST(req: Request) {
   try {
     const { prospectName, lastMessage } = await req.json();
 
-    const response = await openai.chat.completions.create({
-      model: "gemini-3-flash",
-      stream: true,
+    const result = await streamText({
+      model: google('gemini-1.5-flash'),
       messages: [{
         role: "system",
         content: `You are an expert sales assistant. Analyze the message from ${prospectName}: "${lastMessage}".
@@ -35,8 +28,7 @@ export async function POST(req: Request) {
       }]
     });
 
-    const stream = OpenAIStream(response);
-    return new StreamingTextResponse(stream);
+    return result.toDataStreamResponse();
   } catch (error) {
     console.error('Reply Generation Error:', error);
     return new Response(JSON.stringify({ error: 'Failed to generate replies' }), { status: 500 });
