@@ -1,17 +1,13 @@
-import { camoufox } from 'camoufox'; // 2026 stealth library
+import { Camoufox } from 'camoufox'; // 2026 stealth library
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
 
 export async function scrapeProspect(url: string) {
   // Launching with a real-world "Residential" fingerprint for maximum stealth
-  const browser = await camoufox.launch({
+  const browser = await Camoufox({
     headless: true,
     proxy: process.env.RESIDENTIAL_PROXY ? { server: process.env.RESIDENTIAL_PROXY } : undefined,
-    fingerprint: {
-      device: 'desktop',
-      os: 'windows',
-    }
   });
 
   const page = await browser.newPage();
@@ -59,7 +55,7 @@ export async function scrapeProspect(url: string) {
     if (error) throw error;
     console.log(`✅ Scraped and queued: ${data.name}`);
     return { success: true, name: data.name };
-  } catch (err) {
+  } catch (err: any) {
     console.error("❌ Scraping failed:", err);
     return { success: false, error: err.message };
   } finally {
