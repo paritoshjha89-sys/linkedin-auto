@@ -1,9 +1,10 @@
 "use client";
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Send, Loader2, Thermometer } from 'lucide-react';
+import { Sparkles, Send, Loader2, CheckCircle2 } from 'lucide-react';
 import { useCompletion } from 'ai/react';
 import { supabase } from '@/lib/supabase';
+import { queueReply } from '@/lib/automation';
 
 interface Message {
   sender: string;
@@ -19,8 +20,10 @@ export default function SmartInbox({ message, leadId }: { message: Message, lead
   const [replies, setReplies] = useState<ReplyOption[]>([]);
   const [temperature, setTemperature] = useState<string | null>(null);
   const [selectedReply, setSelectedReply] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [isSent, setIsSent] = useState(false);
 
-  const { complete, completion, isLoading } = useCompletion({
+  const { complete, isLoading } = useCompletion({
     api: '/api/reply-options',
     onFinish: async (prompt, completion) => {
       try {
@@ -28,7 +31,6 @@ export default function SmartInbox({ message, leadId }: { message: Message, lead
         setReplies(data.options || []);
         setTemperature(data.temp || null);
         
-        // Update lead classification in Supabase if leadId exists
         if (leadId && data.temp) {
           await supabase
             .from('leads')
@@ -44,7 +46,24 @@ export default function SmartInbox({ message, leadId }: { message: Message, lead
   const getAiSuggestions = () => {
     setReplies([]);
     setTemperature(null);
+    setIsSent(false);
     complete(JSON.stringify({ lastMessage: message.text, prospectName: message.sender }));
+  };
+
+  const handleSend = async () => {
+    if (!selectedReply || !leadId) return;
+    
+    setIsSending(true);
+    try {
+      await queueReply(leadId, selectedReply);
+      setIsSent(true);
+      setSelectedReply("");
+      setReplies([]);
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const getTempColor = (temp: string) => {
@@ -95,6 +114,17 @@ export default function SmartInbox({ message, leadId }: { message: Message, lead
             AI is analyzing sentiment and generating replies...
           </div>
         )}
+
+        {isSent && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 flex items-center gap-2 text-[10px] font-bold text-emerald-500 uppercase tracking-widest"
+          >
+            <CheckCircle2 size={12} />
+            Reply Queued for Send (Safety Delays Active)
+          </motion.div>
+        )}
       </div>
 
       {/* AI Suggestion Bar */}
@@ -116,7 +146,11 @@ export default function SmartInbox({ message, leadId }: { message: Message, lead
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.1 }}
                   onClick={() => setSelectedReply(reply.text)}
-                  className="text-left p-4 text-xs border border-slate-100 rounded-2xl hover:border-primary/30 hover:bg-primary/[0.02] transition-all group/opt shadow-sm"
+                  className={`text-left p-4 text-xs border rounded-2xl transition-all group/opt shadow-sm ${
+                    selectedReply === reply.text 
+                    ? 'border-primary bg-primary/5 ring-1 ring-primary/20' 
+                    : 'border-slate-100 hover:border-primary/30 hover:bg-primary/[0.02]'
+                  }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[9px] font-black text-primary uppercase tracking-tighter opacity-70">{reply.type}</span>
@@ -147,8 +181,12 @@ export default function SmartInbox({ message, leadId }: { message: Message, lead
             className="flex-1 bg-slate-50 border-slate-100 border rounded-2xl px-6 py-4 text-sm font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
             placeholder="Type a custom reply or select a suggestion..."
           />
-          <button className="bg-gradient-vibrant text-white p-4 rounded-2xl hover:opacity-90 shadow-xl shadow-primary/20 active:scale-95 transition-all">
-            <Send size={20} />
+          <button 
+            onClick={handleSend}
+            disabled={isSending || !selectedReply}
+            className="bg-gradient-vibrant text-white px-6 py-4 rounded-2xl hover:opacity-90 shadow-xl shadow-primary/20 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale flex items-center justify-center min-w-[64px]"
+          >
+            {isSending ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
           </button>
         </div>
       </div>
