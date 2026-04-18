@@ -5,6 +5,7 @@ import { ArrowRight, Play, Zap, Target, BarChart3, Users, Check } from 'lucide-r
 import SubscribeButton from '@/components/billing/SubscribeButton';
 import AuthModal from '@/components/auth/AuthModal';
 import FloatingChat from '@/components/Chatbot/FloatingChat';
+import Logo from '@/components/Logo';
 
 const features = [
   {
@@ -46,7 +47,7 @@ export default function Home() {
       {/* Navigation */}
       <nav className="glass sticky top-0 z-[100] h-20 flex items-center justify-between px-8 md:px-16">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-vibrant shadow-lg shadow-primary/20" />
+          <Logo className="w-10 h-10" />
           <span className="text-xl font-extrabold tracking-tight">OutreachFlow</span>
         </div>
         <div className="hidden md:flex items-center gap-10 font-bold text-sm tracking-tight">

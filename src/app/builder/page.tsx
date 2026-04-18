@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useLayoutEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   ReactFlow,
   MiniMap,
@@ -20,6 +21,7 @@ import SentimentNode from '@/components/builder/SentimentNode';
 import Sidebar, { ACTIONS_DATA } from '@/components/builder/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
+import Logo from '@/components/Logo';
 
 const nodeTypes = {
   customNode: CustomNode,
@@ -27,11 +29,25 @@ const nodeTypes = {
 };
 
 export default function FlowBuilder() {
+  const router = useRouter();
+  const [authLoading, setAuthLoading] = useState(true);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [reactFlowInstance, setReactFlowInstance] = React.useState<ReactFlowInstance | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
+
+  useLayoutEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/');
+      } else {
+        setAuthLoading(false);
+      }
+    };
+    checkUser();
+  }, [router]);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge({ ...params, animated: true, style: { stroke: '#1D4ED8', strokeWidth: 2 } }, eds)),
@@ -62,7 +78,7 @@ export default function FlowBuilder() {
         .from('campaigns')
         .insert({
           name: `Campaign ${new Date().toLocaleDateString()}`,
-          user_id: '00000000-0000-0000-0000-000000000000',
+          user_id: '00000000-0000-0000-0000-000000000000', // Mock user for prototype
           nodes: serializableNodes,
           edges: edges,
           is_active: true
@@ -139,11 +155,19 @@ export default function FlowBuilder() {
     [reactFlowInstance, onNodeDelete, onNodeChange, setNodes],
   );
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="animate-spin text-primary" size={32} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-screen w-full bg-slate-50">
       <header className="h-16 border-b bg-white flex items-center justify-between px-8 z-10 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-vibrant shadow-md" />
+          <Logo className="w-8 h-8" />
           <div>
             <h1 className="text-lg font-extrabold tracking-tight">Campaign Canvas</h1>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Drag nodes to build sequence</p>
